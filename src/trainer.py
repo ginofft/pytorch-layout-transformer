@@ -11,6 +11,8 @@ from livelossplot import PlotLosses
 from .utils import sample, is_notebook
 from .model import GPTConfig, GPT
 from .dataset import LayoutDataset
+import wandb
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,8 @@ class LayoutTransformerTrainer:
         else:
             self.workdir = Path('')
         self.model = self._create_model(config)
+        wandb.init(project='LayoutTransformer', config=config, 
+                   name=str(int(time.time()))+'_'+config.name)
         self.device = 'cpu'
         # take over whatever gpus are on the system
         if torch.cuda.is_available():
@@ -36,14 +40,14 @@ class LayoutTransformerTrainer:
         else:
             liveplot = None
 
-        train_dataset = LayoutDataset(self.config.dataset_path+'/train.json',
+        self.train_dataset = LayoutDataset(self.config.dataset_path+'/train.json',
                                       config=self.config.dataset)
-        val_dataset = LayoutDataset(self.config.dataset_path+'/val.json',
+        self.val_dataset = LayoutDataset(self.config.dataset_path+'/val.json',
                                       config=self.config.dataset)
-        train_dataloader = DataLoader(train_dataset, batch_size=self.config.batch_size,
+        train_dataloader = DataLoader(self.train_dataset, batch_size=self.config.batch_size,
                                       shuffle=self.config.train_shuffle,
                                       drop_last=False)
-        val_dataloader = DataLoader(val_dataset, batch_size=self.config.eval_batch_size,
+        val_dataloader = DataLoader(self.val_dataset, batch_size=self.config.eval_batch_size,
                                     shuffle=self.config.train_shuffle,
                                     drop_last=False)
         raw_model = self.model.module if hasattr(self.model, "module") else self.model
@@ -57,8 +61,6 @@ class LayoutTransformerTrainer:
             optimizer.load_state_dict(ckpt['optimizer'])
 
             metric_history = ckpt['metric_history']
-            metric_history['loss'] = metric_history['loss'].cpu().detach().numpy()
-            metric_history['val_loss'] = metric_history['loss'].cpu().detach().numpy()
             min_val_loss = ckpt['min_loss']
             start_epoch = ckpt['epoch']
             self.iters = ckpt['iters']
@@ -78,19 +80,25 @@ class LayoutTransformerTrainer:
             val_loss = self._epoch('val', val_dataloader, optimizer, pad_token)
             
             # Metrics
-            metric_history['loss'].append(train_loss.cpu().detach().numpy())
-            metric_history['val_loss'].append(val_loss.cpu().detach().numpy())
+            metric_history['loss'].append(train_loss)
+            metric_history['val_loss'].append(val_loss)
             # Log messages
             logs = {}
             logs["loss"] = metric_history["loss"][-1]
             logs["val_loss"] = metric_history["val_loss"][-1]
+            wandb.log({
+                'train_loss': train_loss,
+                'lr': optimizer.param_groups[0]['lr'],
+                'epoch': epoch
+            }, step=self.iters)
+            wandb.log({'val_loss': val_loss}, step=self.iters)
             if liveplot:
                 liveplot.update(logs)
                 liveplot.send()
             else:
                 print('Epoch {} train/val loss: {:.6f} / {:.6f}'.format(epoch,
-                                                                        logs['loss'],
-                                                                        logs['val_loss']))
+                                                                    logs['loss'],
+                                                                    logs['val_loss']))
             
             # Checkpoint
             if val_loss < min_val_loss:
@@ -104,6 +112,7 @@ class LayoutTransformerTrainer:
                     'iters': self.iters
                 }, 'best.pth.tar')
             if (epoch % self.config.save_every_epoch) == 0:
+                self._sample_layout(epoch)
                 self._save_ckpt({
                     'epoch': epoch,
                     'metric_history': metric_history,
@@ -131,6 +140,8 @@ class LayoutTransformerTrainer:
         epoch_loss = 0
         for x,y in dataloader:
             x = x.to(self.device)
+            if not is_train:
+                self.fixed_x = x[:min(4, len(x))]
             y = y.to(self.device)
 
             with torch.set_grad_enabled(is_train):
@@ -158,8 +169,43 @@ class LayoutTransformerTrainer:
                     lr = self.config.optimizer.lr
             del x, y, logits
         epoch_loss = epoch_loss / n_batches
-        return epoch_loss
-    
+        return epoch_loss.item()
+
+    def _sample_layout(self, epoch):
+        # Based Layout
+        layouts = self.fixed_x.detach().cpu().numpy()
+        input_layouts = [self.train_dataset.render(layout) for layout in layouts]
+        # Reconstruction Layout
+        x_cond = self.fixed_x.to(self.device)
+        logits, _ = self.model(x_cond)
+        probs = F.softmax(logits, dim=-1)
+        _, y = torch.topk(probs, k=1, dim=-1)
+        layouts = torch.cat((x_cond[:, :1], y[:, :, 0]), dim=1).detach().cpu().numpy()
+        recon_layouts = [self.train_dataset.render(layout) for layout in layouts]
+
+        # Samples - Random
+        layouts = sample(self.model, x_cond[:, :6], steps=self.train_dataset.max_length,
+                            temperature=1.0, sample=True, top_k=5).detach().cpu().numpy()
+        sample_random_layouts = [self.train_dataset.render(layout) for layout in layouts]
+        
+        # samples - deterministic
+        layouts = sample(self.model, x_cond[:, :6], steps=self.train_dataset.max_length,
+                            temperature=1.0, sample=False, top_k=None).detach().cpu().numpy()
+        sample_det_layouts = [self.train_dataset.render(layout) for layout in layouts]
+
+        wandb.log({
+            "input_layouts": [wandb.Image(pil, caption=f'input_{epoch:02d}_{i:02d}.png')
+                                for i, pil in enumerate(input_layouts)],
+            "recon_layouts": [wandb.Image(pil, caption=f'recon_{epoch:02d}_{i:02d}.png')
+                                for i, pil in enumerate(recon_layouts)],
+            "sample_random_layouts": [wandb.Image(pil, caption=f'sample_random_{epoch:02d}_{i:02d}.png')
+                                        for i, pil in enumerate(sample_random_layouts)],
+            "sample_det_layouts": [wandb.Image(pil, caption=f'sample_det_{epoch:02d}_{i:02d}.png')
+                                    for i, pil in enumerate(sample_det_layouts)],
+        }, step=self.iters)
+
+
+
     def _save_ckpt(self, state, filename):
         out_path = self.workdir/filename
         torch.save(state, out_path)

@@ -11,6 +11,7 @@ def get_publaynet_config():
 
 	config = ml_collections.ConfigDict()
 	# Exp info
+	config.name = 'Publaynet'
 	config.ckpt_path = None
 	config.dataset_path = "data/publaynet"
 	config.limit = 20
@@ -21,7 +22,7 @@ def get_publaynet_config():
 	config.train_shuffle = True
 	config.eval_pad_last_batch = False
 	config.eval_batch_size = 64
-	config.save_every_epoch = 50
+	config.save_every_epoch = 25
 
 	# Model info
 	config.num_layers = 6
@@ -30,7 +31,7 @@ def get_publaynet_config():
 
 	# Optimizer info
 	config.optimizer = ml_collections.ConfigDict()
-	config.optimizer.lr = 4e-6
+	config.optimizer.lr = 4e-5
 	config.optimizer.beta1 = 0.9
 	config.optimizer.beta2 = 0.95
 	config.optimizer.weight_decay = 0.1
