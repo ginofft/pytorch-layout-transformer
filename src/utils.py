@@ -17,7 +17,7 @@ def get_publaynet_config():
 	config.limit = 20
 
 	# Training info
-	config.epoch = 500
+	config.epoch = 100
 	config.batch_size = 64
 	config.train_shuffle = True
 	config.eval_pad_last_batch = False
@@ -31,14 +31,14 @@ def get_publaynet_config():
 
 	# Optimizer info
 	config.optimizer = ml_collections.ConfigDict()
-	config.optimizer.lr = 4e-5
+	config.optimizer.lr = 1e-4
 	config.optimizer.beta1 = 0.9
 	config.optimizer.beta2 = 0.95
 	config.optimizer.weight_decay = 0.1
 	config.optimizer.grad_norm_clip = 1.0
 	config.optimizer.lr_decay = True
-	config.optimizer.warmup_iters = 0
-	config.optimizer.final_iters = 0
+	config.optimizer.warmup_iters = 2000
+	config.optimizer.final_iters = 10000
 
 	# Dataset info
 	config.dataset = ml_collections.ConfigDict()

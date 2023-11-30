@@ -154,7 +154,8 @@ class LayoutTransformerTrainer:
                     if self.iters < self.config.optimizer.warmup_iters:
                         lr_mult = float(self.iters) / float(max(1, self.config.optimizer.warmup_iters)) # Linear Ramp
                     else:
-                        progress = float(self.iters - self.config.optimizer.warmup_iters) / float(max(1, self.config.optimizer.final_iters - self.config.optimizer.warmup_iters))
+                        progress = float(self.iters - self.config.optimizer.warmup_iters) / \
+                                    float(max(1, self.config.optimizer.final_iters - self.config.optimizer.warmup_iters))
                         lr_mult = max(0.1, 0.5*(1.0 + math.cos(math.pi * progress))) 
                     lr = self.config.optimizer.lr * lr_mult
                     for param_group in opt.param_groups:
@@ -169,7 +170,7 @@ class LayoutTransformerTrainer:
                 }, step=self.iters)
             del x, y, logits
         epoch_loss = (epoch_loss / n_batches).item()
-        # For Validation, only report the epoch loss
+        # For Validation, only report the epoch loss    
         if not is_train:
             wandb.log({'epoch_val_loss': epoch_loss}, step=self.iters)
         return epoch_loss
