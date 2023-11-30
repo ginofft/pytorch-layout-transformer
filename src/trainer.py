@@ -30,7 +30,7 @@ class LayoutTransformerTrainer:
             self.device = torch.cuda.current_device()
             self.model = torch.nn.DataParallel(self.model).to(self.device)
 
-    def train(self, device):
+    def train(self):
         if is_notebook():
             liveplot = PlotLosses()
         else:
@@ -48,7 +48,7 @@ class LayoutTransformerTrainer:
                                     drop_last=False)
         raw_model = self.model.module if hasattr(self.model, "module") else self.model
         optimizer = raw_model.configure_optimizers(self.config.optimizer)
-        pad_token = train_dataloader.pad_token
+        pad_token = train_dataset.pad_token
 
         if self.config.checkpoint_path is not None:
             ckpt = self._load_ckpt(self.config.cpkt_path)
@@ -102,7 +102,6 @@ class LayoutTransformerTrainer:
                     'iters': self.iters
                 }, 'epoch{}.pth.tar'.format(epoch))
             
-
                 
     def _create_model(self, config):
         #TODO - change 256 into config
@@ -141,11 +140,11 @@ class LayoutTransformerTrainer:
                     else:
                         progress = float(self.iters - self.config.optimizer.warmup_iters)
                         lr_mult = max(0.1, 0.5*(1.0 + math.cos(math.pi * progress))) 
-                    lr = self.config.lr * lr_mult
+                    lr = self.config.optimizer.lr * lr_mult
                     for param_group in opt.param_groups:
                         param_group['lr'] = lr
                 else:
-                    lr = self.config.lr
+                    lr = self.config.optimizer.lr
             del x, y, logits
         epoch_loss = epoch_loss / n_batches
         return epoch_loss
