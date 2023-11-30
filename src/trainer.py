@@ -184,12 +184,12 @@ class LayoutTransformerTrainer:
         recon_layouts = [self.train_dataset.render(layout) for layout in layouts]
 
         # Samples - Random
-        layouts = sample(self.model, x_cond[:, :6], steps=self.train_dataset.max_length,
+        layouts = sample(self.model, x_cond[:, :6], steps=self.train_dataset.seq_len,
                             temperature=1.0, sample=True, top_k=5).detach().cpu().numpy()
         sample_random_layouts = [self.train_dataset.render(layout) for layout in layouts]
         
         # samples - deterministic
-        layouts = sample(self.model, x_cond[:, :6], steps=self.train_dataset.max_length,
+        layouts = sample(self.model, x_cond[:, :6], steps=self.train_dataset.seq_len,
                             temperature=1.0, sample=False, top_k=None).detach().cpu().numpy()
         sample_det_layouts = [self.train_dataset.render(layout) for layout in layouts]
 
