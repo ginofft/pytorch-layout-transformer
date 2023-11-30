@@ -11,7 +11,7 @@ def get_publaynet_config():
 
 	config = ml_collections.ConfigDict()
 	# Exp info
-	config.checkpoint_path = None
+	config.ckpt_path = None
 	config.dataset_path = "data/publaynet"
 	config.limit = 20
 
