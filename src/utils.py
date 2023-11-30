@@ -24,15 +24,13 @@ def get_publaynet_config():
 	config.save_every_epoch = 50
 
 	# Model info
-	config.layout_dim = 2
-	config.num_layers = 4
+	config.num_layers = 6
 	config.qkv_dim = 512
-	config.mlp_dim = 2048
 	config.num_heads = 8
 
 	# Optimizer info
 	config.optimizer = ml_collections.ConfigDict()
-	config.optimizer.lr = 3e-4
+	config.optimizer.lr = 4e-6
 	config.optimizer.beta1 = 0.9
 	config.optimizer.beta2 = 0.95
 	config.optimizer.weight_decay = 0.1
