@@ -57,6 +57,8 @@ class LayoutTransformerTrainer:
             optimizer.load_state_dict(ckpt['optimizer'])
 
             metric_history = ckpt['metric_history']
+            metric_history['loss'] = metric_history['loss'].cpu()
+            metric_history['val_loss'] = metric_history['loss'].cpu()
             min_val_loss = ckpt['min_loss']
             start_epoch = ckpt['epoch']
             self.iters = ckpt['iters']
@@ -76,8 +78,8 @@ class LayoutTransformerTrainer:
             val_loss = self._epoch('val', val_dataloader, optimizer, pad_token)
             
             # Metrics
-            metric_history['loss'].append(train_loss)
-            metric_history['val_loss'].append(val_loss)
+            metric_history['loss'].append(train_loss.cpu())
+            metric_history['val_loss'].append(val_loss.cpu())
             # Log messages
             logs = {}
             logs["loss"] = metric_history["loss"][-1]
