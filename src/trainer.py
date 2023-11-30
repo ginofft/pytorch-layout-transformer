@@ -50,7 +50,7 @@ class LayoutTransformerTrainer:
         optimizer = raw_model.configure_optimizers(self.config.optimizer)
         pad_token = train_dataset.pad_token
 
-        if self.config.checkpoint_path is not None:
+        if self.config.cpkt_path is not None:
             ckpt = self._load_ckpt(self.config.cpkt_path)
             
             self.model.load_state_dict(ckpt['model'])
