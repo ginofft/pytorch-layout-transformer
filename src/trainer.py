@@ -78,8 +78,17 @@ class LayoutTransformerTrainer:
             # Metrics
             metric_history['loss'].append(train_loss)
             metric_history['val_loss'].append(val_loss)
-            print('Epoch {} completed: \nTrain loss: {:.4f} \nValidation loss: {:.4f}'.format(
-                epoch, train_loss, val_loss))
+            # Log messages
+            logs = {}
+            logs["loss"] = metric_history["loss"][-1]
+            logs["val_loss"] = metric_history["val_loss"][-1]
+            if liveplot:
+                liveplot.update(logs)
+                liveplot.send()
+            else:
+                print('Epoch {} train/val loss: {:.6f} / {:.6f}'.format(epoch,
+                                                                        logs['loss'],
+                                                                        logs['val_loss']))
             
             # Checkpoint
             if val_loss < min_val_loss:
