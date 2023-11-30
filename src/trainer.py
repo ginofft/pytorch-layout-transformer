@@ -76,8 +76,8 @@ class LayoutTransformerTrainer:
 
         for epoch in range(start_epoch+1, self.config.epoch+1):
             # Running on train and validation set
-            train_loss = self._epoch('train', train_dataloader, optimizer, pad_token)
-            val_loss = self._epoch('val', val_dataloader, optimizer, pad_token)
+            train_loss = self._epoch(epoch, 'train', train_dataloader, optimizer, pad_token)
+            val_loss = self._epoch(epoch, 'val', val_dataloader, optimizer, pad_token)
             
             # Metrics
             metric_history['loss'].append(train_loss)
@@ -86,12 +86,6 @@ class LayoutTransformerTrainer:
             logs = {}
             logs["loss"] = metric_history["loss"][-1]
             logs["val_loss"] = metric_history["val_loss"][-1]
-            wandb.log({
-                'train_loss': train_loss,
-                'lr': optimizer.param_groups[0]['lr'],
-                'epoch': epoch
-            }, step=self.iters)
-            wandb.log({'val_loss': val_loss}, step=self.iters)
             if liveplot:
                 liveplot.update(logs)
                 liveplot.send()
@@ -132,7 +126,7 @@ class LayoutTransformerTrainer:
                             n_emb=config.qkv_dim)
         return GPT(mconfig)
     
-    def _epoch(self, split, dataloader, opt, pad_token):
+    def _epoch(self, epoch, split, dataloader, opt, pad_token):
         is_train = split == 'train' # True or False based on split
         model = self.model
         model.train(is_train)
@@ -167,9 +161,18 @@ class LayoutTransformerTrainer:
                         param_group['lr'] = lr
                 else:
                     lr = self.config.optimizer.lr
+                # For training, report loss every batch
+                wandb.log({
+                'batch_train_loss': loss,
+                'lr': lr,
+                'epoch': epoch
+                }, step=self.iters)
             del x, y, logits
-        epoch_loss = epoch_loss / n_batches
-        return epoch_loss.item()
+        epoch_loss = (epoch_loss / n_batches).item()
+        # For Validation, only report the epoch loss
+        if not is_train:
+            wandb.log({'epoch_val_loss': epoch_loss}, step=self.iters)
+        return epoch_loss
 
     def _sample_layout(self, epoch):
         # Based Layout
