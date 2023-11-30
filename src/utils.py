@@ -13,6 +13,7 @@ def get_publaynet_config():
 	# Exp info
 	config.checkpoint_path = None
 	config.dataset_path = "data/publaynet"
+	config.limit = 20
 
 	# Training info
 	config.epoch = 500
@@ -28,18 +29,17 @@ def get_publaynet_config():
 	config.qkv_dim = 512
 	config.mlp_dim = 2048
 	config.num_heads = 8
-	config.dropout_rate = 0.1
-	config.attention_dropout_rate = 0.3
-	config.label_smoothing = 0.
 
 	# Optimizer info
 	config.optimizer = ml_collections.ConfigDict()
-	config.optimizer.type = "adam"
 	config.optimizer.lr = 3e-4
 	config.optimizer.beta1 = 0.9
 	config.optimizer.beta2 = 0.95
 	config.optimizer.weight_decay = 0.1
 	config.optimizer.grad_norm_clip = 1.0
+	config.optimizer.lr_decay = True
+	config.optimizer.warmup_iters = 0
+	config.optimizer.final_iters = 0
 
 	# Dataset info
 	config.dataset = ml_collections.ConfigDict()
