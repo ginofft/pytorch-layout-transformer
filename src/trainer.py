@@ -52,7 +52,7 @@ class LayoutTransformerTrainer:
                                     drop_last=False)
         raw_model = self.model.module if hasattr(self.model, "module") else self.model
         optimizer = raw_model.configure_optimizers(self.config.optimizer)
-        pad_token = train_dataset.pad_token
+        pad_token = self.train_dataset.pad_token
 
         if self.config.ckpt_path is not None:
             ckpt = self._load_ckpt(self.config.ckpt_path)
