@@ -198,13 +198,13 @@ class LayoutTransformerTrainer:
         sample_det_layouts = [self.train_dataset.render(layout) for layout in layouts]
 
         wandb.log({
-            "input_layouts": [wandb.Image(pil, caption=f'input_{epoch:02d}_{i:02d}.png')
+            "input_layouts": [wandb.Image(pil, caption='input_{:02d}_{:02d}.png'.format(epoch,i))
                                 for i, pil in enumerate(input_layouts)],
-            "recon_layouts": [wandb.Image(pil, caption=f'recon_{epoch:02d}_{i:02d}.png')
+            "recon_layouts": [wandb.Image(pil, caption='recon_{:02d}_{:02d}.png'.format(epoch,i))
                                 for i, pil in enumerate(recon_layouts)],
-            "sample_random_layouts": [wandb.Image(pil, caption=f'sample_random_{epoch:02d}_{i:02d}.png')
+            "sample_random_layouts": [wandb.Image(pil, caption='sample_random_{:02d}_{:02d}.png'.format(epoch,i))
                                         for i, pil in enumerate(sample_random_layouts)],
-            "sample_det_layouts": [wandb.Image(pil, caption=f'sample_det_{epoch:02d}_{i:02d}.png')
+            "sample_det_layouts": [wandb.Image(pil, caption='sample_det_{:02d}_{:02d}.png'.format(epoch,i))
                                     for i, pil in enumerate(sample_det_layouts)],
         }, step=self.iters)
 

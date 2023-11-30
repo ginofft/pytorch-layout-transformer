@@ -22,10 +22,10 @@ def get_publaynet_config():
 	config.train_shuffle = True
 	config.eval_pad_last_batch = False
 	config.eval_batch_size = 64
-	config.save_every_epoch = 25
+	config.save_every_epoch = 10
 
 	# Model info
-	config.num_layers = 6
+	config.num_layers = 4
 	config.qkv_dim = 512
 	config.num_heads = 8
 
