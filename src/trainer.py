@@ -208,8 +208,6 @@ class LayoutTransformerTrainer:
                                     for i, pil in enumerate(sample_det_layouts)],
         }, step=self.iters)
 
-
-
     def _save_ckpt(self, state, filename):
         out_path = self.workdir/filename
         torch.save(state, out_path)
